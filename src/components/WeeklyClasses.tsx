@@ -192,7 +192,7 @@ export default function WeeklyClasses() {
     }
 
     setError(null);
-    const results = { success: 0, failed: 0, conflicts: [] };
+    const results = { success: 0, failed: 0, conflicts: [] as string[] };
 
     for (const formClass of validClasses) {
       try {

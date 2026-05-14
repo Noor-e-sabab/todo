@@ -53,13 +53,23 @@ export async function GET() {
   }
 }
 
+interface WeeklyClass {
+  id: number;
+  className: string;
+  day: string;
+  time: string;
+  instructor: string;
+  location: string;
+  attended: boolean;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { className, day, time, instructor, location } = await request.json();
     const data = await loadData();
 
-    const newClass = {
-      id: 0,
+    const newClass: WeeklyClass = {
+      id: Date.now(),
       className,
       day,
       time,
@@ -73,8 +83,7 @@ export async function POST(request: NextRequest) {
     if (conflict.conflicts) {
       return NextResponse.json({ error: conflict.message }, { status: 409 });
     }
-
-    newClass.id = Date.now();
+    
     data.weekly_classes.push(newClass);
     await saveData(data);
 
