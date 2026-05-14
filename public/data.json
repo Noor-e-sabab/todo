@@ -31,7 +31,7 @@
     {
       "className": "CSE345 Lab",
       "day": "Sunday",
-      "time": "S 1:30PM-3:30PM",
+      "time": "1:30PM-3:30PM",
       "instructor": "",
       "location": "634 (Digital System Lab)",
       "id": 1778724208102,
@@ -107,6 +107,24 @@
       "instructor": "",
       "location": "222",
       "id": 1778740435571,
+      "attended": false
+    },
+    {
+      "id": 1778745026075,
+      "className": "BUS231\t",
+      "day": "Thrusday",
+      "time": "8:30AM-10:00AM\t",
+      "instructor": "",
+      "location": "AB1-601",
+      "attended": false
+    },
+    {
+      "id": 1778745234910,
+      "className": "BUS231\t",
+      "day": "Thrusday",
+      "time": "8:30AM-10:00AM",
+      "instructor": "",
+      "location": "AB1-601",
       "attended": false
     }
   ],
