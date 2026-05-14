@@ -13,6 +13,7 @@ interface Task {
 export default function DailyTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(true);
@@ -47,14 +48,44 @@ export default function DailyTasks() {
       });
 
       if (response.ok) {
-        setTitle('');
-        setDescription('');
+        resetForm();
         setShowForm(false);
         await loadTasks();
       }
     } catch (error) {
       console.error('Error adding task:', error);
     }
+  }
+
+  async function saveEdit(id: number) {
+    try {
+      const response = await fetch(`/api/tasks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description }),
+      });
+
+      if (response.ok) {
+        resetForm();
+        setShowForm(false);
+        await loadTasks();
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  }
+
+  function resetForm() {
+    setTitle('');
+    setDescription('');
+    setEditingId(null);
+  }
+
+  function startEdit(task: Task) {
+    setTitle(task.title);
+    setDescription(task.description);
+    setEditingId(task.id);
+    setShowForm(true);
   }
 
   async function toggleTask(id: number, completed: boolean) {
@@ -87,14 +118,17 @@ export default function DailyTasks() {
     }
   }
 
-  if (loading) return <div className="text-center py-4">Loading tasks...</div>;
+  if (loading) return <div className="text-center py-4 text-gray-800">Loading tasks...</div>;
 
   return (
     <section className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
       <div className="flex justify-between items-center mb-4 pb-4 border-b">
         <h2 className="text-2xl font-semibold text-gray-800">📅 Daily Tasks</h2>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            resetForm();
+            setShowForm(!showForm);
+          }}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
         >
           + Add Task
@@ -102,33 +136,36 @@ export default function DailyTasks() {
       </div>
 
       {showForm && (
-        <div className="bg-gray-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+        <div className="bg-gray-50 border-l-4 border-blue-500 p-4 mb-4 rounded" suppressHydrationWarning>
           <div className="flex flex-col gap-2 mb-4">
             <input
               type="text"
               placeholder="Enter a new task..."
-              value={title}
+              value={title ?? ''}
               onChange={(e) => setTitle(e.target.value)}
-              className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
               onKeyPress={(e) => e.key === 'Enter' && addTask()}
             />
             <textarea
               placeholder="Description (optional)"
-              value={description}
+              value={description ?? ''}
               onChange={(e) => setDescription(e.target.value)}
-              className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-gray-900 placeholder-gray-500"
               rows={2}
             />
           </div>
           <div className="flex gap-2">
             <button
-              onClick={addTask}
+              onClick={() => (editingId ? saveEdit(editingId) : addTask())}
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
             >
-              Add
+              {editingId ? 'Save' : 'Add'}
             </button>
             <button
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                resetForm();
+                setShowForm(false);
+              }}
               className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition-colors"
             >
               Cancel
@@ -139,7 +176,7 @@ export default function DailyTasks() {
 
       <div className="space-y-2">
         {tasks.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-700">
             No tasks yet. Add one to get started!
           </div>
         ) : (
@@ -179,12 +216,20 @@ export default function DailyTasks() {
                   Created: {task.created_date}
                 </div>
               </div>
-              <button
-                onClick={() => deleteTask(task.id)}
-                className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
-              >
-                Delete
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => startEdit(task)}
+                  className="text-blue-900 hover:text-blue-950 font-bold transition-colors text-sm underline"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => deleteTask(task.id)}
+                  className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))
         )}

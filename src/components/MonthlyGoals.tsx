@@ -13,6 +13,7 @@ interface Goal {
 export default function MonthlyGoals() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(true);
@@ -47,14 +48,44 @@ export default function MonthlyGoals() {
       });
 
       if (response.ok) {
-        setTitle('');
-        setDescription('');
+        resetForm();
         setShowForm(false);
         await loadGoals();
       }
     } catch (error) {
       console.error('Error adding goal:', error);
     }
+  }
+
+  async function saveEdit(id: number) {
+    try {
+      const response = await fetch(`/api/goals/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description }),
+      });
+
+      if (response.ok) {
+        resetForm();
+        setShowForm(false);
+        await loadGoals();
+      }
+    } catch (error) {
+      console.error('Error updating goal:', error);
+    }
+  }
+
+  function resetForm() {
+    setTitle('');
+    setDescription('');
+    setEditingId(null);
+  }
+
+  function startEdit(goal: Goal) {
+    setTitle(goal.title);
+    setDescription(goal.description);
+    setEditingId(goal.id);
+    setShowForm(true);
   }
 
   async function toggleGoal(id: number, completed: boolean) {
@@ -87,14 +118,17 @@ export default function MonthlyGoals() {
     }
   }
 
-  if (loading) return <div className="text-center py-4">Loading goals...</div>;
+  if (loading) return <div className="text-center py-4 text-gray-800">Loading goals...</div>;
 
   return (
     <section className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
       <div className="flex justify-between items-center mb-4 pb-4 border-b">
         <h2 className="text-2xl font-semibold text-gray-800">🎯 Monthly Goals</h2>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            resetForm();
+            setShowForm(!showForm);
+          }}
           className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
         >
           + Add Goal
@@ -102,33 +136,36 @@ export default function MonthlyGoals() {
       </div>
 
       {showForm && (
-        <div className="bg-gray-50 border-l-4 border-green-500 p-4 mb-4 rounded">
+        <div className="bg-gray-50 border-l-4 border-green-500 p-4 mb-4 rounded" suppressHydrationWarning>
           <div className="flex flex-col gap-2 mb-4">
             <input
               type="text"
               placeholder="Enter a monthly goal..."
-              value={title}
+              value={title ?? ''}
               onChange={(e) => setTitle(e.target.value)}
-              className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 placeholder-gray-500"
               onKeyPress={(e) => e.key === 'Enter' && addGoal()}
             />
             <textarea
               placeholder="Description (optional)"
-              value={description}
+              value={description ?? ''}
               onChange={(e) => setDescription(e.target.value)}
-              className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 resize-none text-gray-900 placeholder-gray-500"
               rows={2}
             />
           </div>
           <div className="flex gap-2">
             <button
-              onClick={addGoal}
+              onClick={() => (editingId ? saveEdit(editingId) : addGoal())}
               className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors"
             >
-              Add
+              {editingId ? 'Save' : 'Add'}
             </button>
             <button
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                resetForm();
+                setShowForm(false);
+              }}
               className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition-colors"
             >
               Cancel
@@ -139,7 +176,7 @@ export default function MonthlyGoals() {
 
       <div className="space-y-2">
         {goals.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-700">
             No goals yet. Set one to stay motivated!
           </div>
         ) : (
@@ -179,12 +216,20 @@ export default function MonthlyGoals() {
                   Created: {goal.created_date}
                 </div>
               </div>
-              <button
-                onClick={() => deleteGoal(goal.id)}
-                className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
-              >
-                Delete
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => startEdit(goal)}
+                  className="text-blue-900 hover:text-blue-950 font-bold transition-colors text-sm underline"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => deleteGoal(goal.id)}
+                  className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))
         )}

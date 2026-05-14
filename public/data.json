@@ -1,133 +1,122 @@
 {
-  "daily_tasks": [],
+  "daily_tasks": [
+    {
+      "id": 1778748684543,
+      "title": "upload 4 videos daily",
+      "description": "",
+      "completed": false,
+      "created_date": "2026-05-14"
+    },
+    {
+      "id": 1778748709272,
+      "title": "practice 1 hour coding ",
+      "description": "",
+      "completed": false,
+      "created_date": "2026-05-14"
+    }
+  ],
   "weekly_classes": [
     {
       "className": "BUS231",
       "day": "Sunday",
-      "time": "8:30AM-10:00AM",
+      "time": "08:30-10:00",
       "instructor": "",
       "location": "AB3-502",
-      "id": 1778723977851,
-      "attended": false
+      "attended": false,
+      "id": 1778748379593
     },
     {
       "className": "BUS231",
-      "day": "Thrusday",
-      "time": "8:30AM-10:00AM",
+      "day": "Thursday",
+      "time": "08:30-10:00",
       "instructor": "",
       "location": "AB1-601",
-      "id": 1778724056238,
-      "attended": false
+      "attended": false,
+      "id": 1778748379618
     },
     {
       "className": "CSE345",
       "day": "Monday",
-      "time": "11:50AM-1:20PM",
+      "time": "11:50-13:20",
       "instructor": "",
       "location": "AB2-502",
-      "id": 1778724127459,
-      "attended": false
+      "attended": false,
+      "id": 1778748379652
+    },
+    {
+      "className": "CSE345",
+      "day": "Wednesday",
+      "time": "11:50-13:20",
+      "instructor": "",
+      "location": "AB2-502",
+      "attended": false,
+      "id": 1778748379692
     },
     {
       "className": "CSE345 Lab",
       "day": "Sunday",
-      "time": "1:30PM-3:30PM",
+      "time": "13:30-15:30",
       "instructor": "",
-      "location": "634 (Digital System Lab)",
-      "id": 1778724208102,
-      "attended": false
-    },
-    {
-      "className": "CSE345",
-      "day": "Wednesday",
-      "time": "11:50AM-1:20PM",
-      "instructor": "",
-      "location": "AB2-502",
-      "id": 1778739691136,
-      "attended": false
+      "location": "634",
+      "attended": false,
+      "id": 1778748379722
     },
     {
       "className": "CSE366",
       "day": "Tuesday",
-      "time": "3:10PM-4:40PM",
+      "time": "15:10-16:40",
       "instructor": "",
       "location": "FUB-503",
-      "id": 1778739988338,
-      "attended": false
-    },
-    {
-      "className": "CSE366",
-      "day": "Thrusday",
-      "time": "3:10PM-4:40PM",
-      "instructor": "",
-      "location": "FUB-503",
-      "id": 1778740035613,
-      "attended": false
-    },
-    {
-      "className": "CSE366 Lab",
-      "day": "Wednesday",
-      "time": "4:50PM-6:50PM",
-      "instructor": "",
-      "location": "638 (Artificial Intelligence Lab)",
-      "id": 1778740091414,
-      "attended": false
+      "attended": false,
+      "id": 1778748379754
     },
     {
       "className": "CSE366",
       "day": "Thursday",
-      "time": "3:10PM-4:40PM",
+      "time": "15:10-16:40",
       "instructor": "",
       "location": "FUB-503",
-      "id": 1778740211677,
-      "attended": false
+      "attended": false,
+      "id": 1778748379779
+    },
+    {
+      "className": "CSE366 Lab",
+      "day": "Wednesday",
+      "time": "16:50-18:50",
+      "instructor": "",
+      "location": "638",
+      "attended": false,
+      "id": 1778748379806
     },
     {
       "className": "CSE405 Lab",
       "day": "Monday",
-      "time": "1:30PM-3:30PM",
+      "time": "13:30-15:30",
       "instructor": "",
-      "location": "450 (Networking Lab)",
-      "id": 1778740303331,
-      "attended": false
+      "location": "450",
+      "attended": false,
+      "id": 1778748379829
     },
     {
       "className": "CSE405",
       "day": "Sunday",
-      "time": "11:50AM-1:20PM",
+      "time": "11:50-13:20",
       "instructor": "",
       "location": "222",
-      "id": 1778740399144,
-      "attended": false
+      "attended": false,
+      "id": 1778748379854
     },
     {
       "className": "CSE405",
       "day": "Tuesday",
-      "time": "11:50AM-1:20PM",
+      "time": "11:50-13:20",
       "instructor": "",
       "location": "222",
-      "id": 1778740435571,
-      "attended": false
-    },
-    {
-      "id": 1778745026075,
-      "className": "BUS231\t",
-      "day": "Thrusday",
-      "time": "8:30AM-10:00AM\t",
-      "instructor": "",
-      "location": "AB1-601",
-      "attended": false
-    },
-    {
-      "id": 1778745234910,
-      "className": "BUS231\t",
-      "day": "Thrusday",
-      "time": "8:30AM-10:00AM",
-      "instructor": "",
-      "location": "AB1-601",
-      "attended": false
+      "attended": false,
+      "id": 1778748379877
     }
   ],
   "monthly_goals": [],
+  "daily_attendance": {},
   "last_reset": "2026-05-14"
 }

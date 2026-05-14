@@ -7,7 +7,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { completed } = await request.json();
+    const { completed, title, description } = await request.json();
     const data = await loadData();
 
     const task = data.daily_tasks.find((t: any) => t.id === parseInt(id));
@@ -15,7 +15,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    task.completed = completed;
+    if (completed !== undefined) task.completed = completed;
+    if (title !== undefined) task.title = title;
+    if (description !== undefined) task.description = description;
+
     await saveData(data);
 
     return NextResponse.json(task);

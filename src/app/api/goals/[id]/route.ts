@@ -7,7 +7,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { completed } = await request.json();
+    const { completed, title, description } = await request.json();
     const data = await loadData();
 
     const goal = data.monthly_goals.find((g: any) => g.id === parseInt(id));
@@ -15,7 +15,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
-    goal.completed = completed;
+    if (completed !== undefined) goal.completed = completed;
+    if (title !== undefined) goal.title = title;
+    if (description !== undefined) goal.description = description;
+
     await saveData(data);
 
     return NextResponse.json(goal);

@@ -27,7 +27,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
-      <body className="bg-gray-50">{children}</body>
+      <body className="bg-gray-50" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

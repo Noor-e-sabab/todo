@@ -1,6 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loadData, saveData } from '@/lib/data';
 
+function parseTime(timeStr: string): number {
+  // Parse time format like "14:30" or "2:30PM"
+  const match = timeStr.match(/(\d+):(\d+)/);
+  if (match) {
+    let hours = parseInt(match[1]);
+    const minutes = parseInt(match[2]);
+    if (timeStr.toUpperCase().includes('PM') && hours !== 12) {
+      hours += 12;
+    }
+    if (timeStr.toUpperCase().includes('AM') && hours === 12) {
+      hours = 0;
+    }
+    return hours * 60 + minutes;
+  }
+  return 0;
+}
+
+function hasTimeConflict(newTime: string, existingTime: string): boolean {
+  const [newFrom, newTo] = newTime.split('-').map(t => parseTime(t.trim()));
+  const [existFrom, existTo] = existingTime.split('-').map(t => parseTime(t.trim()));
+
+  // Check if time ranges overlap
+  return newFrom < existTo && newTo > existFrom;
+}
+
+function checkConflicts(classes: any[], newClass: any, excludeId?: number): any {
+  for (const existingClass of classes) {
+    // Skip the class being edited
+    if (excludeId && existingClass.id === excludeId) {
+      continue;
+    }
+
+    // Check if same day and times overlap
+    if (existingClass.day === newClass.day && hasTimeConflict(newClass.time, existingClass.time)) {
+      return {
+        conflicts: true,
+        message: `Time conflict with "${existingClass.className}" at ${existingClass.time}`,
+      };
+    }
+  }
+  return { conflicts: false };
+}
+
 export async function GET() {
   try {
     const data = await loadData();
@@ -16,7 +59,6 @@ export async function POST(request: NextRequest) {
     const data = await loadData();
 
     const newClass = {
-      id: Date.now(),
       className,
       day,
       time,
@@ -25,6 +67,13 @@ export async function POST(request: NextRequest) {
       attended: false,
     };
 
+    // Check for conflicts
+    const conflict = checkConflicts(data.weekly_classes, newClass);
+    if (conflict.conflicts) {
+      return NextResponse.json({ error: conflict.message }, { status: 409 });
+    }
+
+    newClass.id = Date.now();
     data.weekly_classes.push(newClass);
     await saveData(data);
 
