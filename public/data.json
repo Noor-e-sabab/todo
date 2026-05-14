@@ -1,0 +1,115 @@
+{
+  "daily_tasks": [],
+  "weekly_classes": [
+    {
+      "className": "BUS231",
+      "day": "Sunday",
+      "time": "8:30AM-10:00AM",
+      "instructor": "",
+      "location": "AB3-502",
+      "id": 1778723977851,
+      "attended": false
+    },
+    {
+      "className": "BUS231",
+      "day": "Thrusday",
+      "time": "8:30AM-10:00AM",
+      "instructor": "",
+      "location": "AB1-601",
+      "id": 1778724056238,
+      "attended": false
+    },
+    {
+      "className": "CSE345",
+      "day": "Monday",
+      "time": "11:50AM-1:20PM",
+      "instructor": "",
+      "location": "AB2-502",
+      "id": 1778724127459,
+      "attended": false
+    },
+    {
+      "className": "CSE345 Lab",
+      "day": "Sunday",
+      "time": "S 1:30PM-3:30PM",
+      "instructor": "",
+      "location": "634 (Digital System Lab)",
+      "id": 1778724208102,
+      "attended": false
+    },
+    {
+      "className": "CSE345",
+      "day": "Wednesday",
+      "time": "11:50AM-1:20PM",
+      "instructor": "",
+      "location": "AB2-502",
+      "id": 1778739691136,
+      "attended": false
+    },
+    {
+      "className": "CSE366",
+      "day": "Tuesday",
+      "time": "3:10PM-4:40PM",
+      "instructor": "",
+      "location": "FUB-503",
+      "id": 1778739988338,
+      "attended": false
+    },
+    {
+      "className": "CSE366",
+      "day": "Thrusday",
+      "time": "3:10PM-4:40PM",
+      "instructor": "",
+      "location": "FUB-503",
+      "id": 1778740035613,
+      "attended": false
+    },
+    {
+      "className": "CSE366 Lab",
+      "day": "Wednesday",
+      "time": "4:50PM-6:50PM",
+      "instructor": "",
+      "location": "638 (Artificial Intelligence Lab)",
+      "id": 1778740091414,
+      "attended": false
+    },
+    {
+      "className": "CSE366",
+      "day": "Thursday",
+      "time": "3:10PM-4:40PM",
+      "instructor": "",
+      "location": "FUB-503",
+      "id": 1778740211677,
+      "attended": false
+    },
+    {
+      "className": "CSE405 Lab",
+      "day": "Monday",
+      "time": "1:30PM-3:30PM",
+      "instructor": "",
+      "location": "450 (Networking Lab)",
+      "id": 1778740303331,
+      "attended": false
+    },
+    {
+      "className": "CSE405",
+      "day": "Sunday",
+      "time": "11:50AM-1:20PM",
+      "instructor": "",
+      "location": "222",
+      "id": 1778740399144,
+      "attended": false
+    },
+    {
+      "className": "CSE405",
+      "day": "Tuesday",
+      "time": "11:50AM-1:20PM",
+      "instructor": "",
+      "location": "222",
+      "id": 1778740435571,
+      "attended": false
+    }
+  ],
+  "monthly_goals": [],
+  "last_reset": "2026-05-14"
+}
