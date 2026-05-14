@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     const data = await loadData();
 
     const newClass = {
+      id: 0,
       className,
       day,
       time,
