@@ -10,18 +10,22 @@ export default function MonthlyAttendanceCalendar() {
   const [attendance, setAttendance] = useState<AttendanceData>({});
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadAttendance();
   }, []);
 
   async function loadAttendance() {
+    setLoading(true);
     try {
       const response = await fetch('/api/attendance');
       const data = await response.json();
       setAttendance(data);
     } catch (error) {
       console.error('Error loading attendance:', error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -71,10 +75,11 @@ export default function MonthlyAttendanceCalendar() {
     <div className="relative">
       <button
         onClick={() => setShowCalendar(!showCalendar)}
-        className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition-colors font-medium text-sm"
+        disabled={loading}
+        className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-400 text-white px-4 py-2 rounded transition-colors font-medium text-sm disabled:cursor-not-allowed"
         title="View monthly attendance calendar"
       >
-        📅 Calendar
+        {loading ? <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> : '📅'} Calendar
       </button>
 
       {showCalendar && (

@@ -33,6 +33,9 @@ export default function WeeklyClasses() {
   const [rawData, setRawData] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     loadClasses();
@@ -192,6 +195,7 @@ export default function WeeklyClasses() {
       return;
     }
 
+    setSubmitting(true);
     setError(null);
     const results = { success: 0, failed: 0, conflicts: [] as string[] };
 
@@ -229,6 +233,9 @@ export default function WeeklyClasses() {
       setError(`Added ${results.success} classes. Conflicts: ${results.conflicts.join('; ')}`);
     } else if (results.failed > 0) {
       setError(`Added ${results.success} classes. ${results.failed} failed.`);
+    } else if (results.success > 0) {
+      setNotification({ type: 'success', message: `${results.success} class(es) added successfully` });
+      setTimeout(() => setNotification(null), 2000);
     }
 
     if (results.success > 0) {
@@ -236,23 +243,35 @@ export default function WeeklyClasses() {
       setShowForm(false);
       await loadClasses();
     }
+    setSubmitting(false);
   }
 
   async function deleteClass(id: number) {
     if (!confirm('Are you sure you want to delete this class?')) return;
 
+    setProcessingId(id);
     try {
       const response = await fetch(`/api/classes/${id}`, { method: 'DELETE' });
 
       if (response.ok) {
+        setNotification({ type: 'success', message: 'Class deleted successfully' });
         await loadClasses();
+        setTimeout(() => setNotification(null), 2000);
+      } else {
+        setNotification({ type: 'error', message: 'Failed to delete class' });
+        setTimeout(() => setNotification(null), 3000);
       }
     } catch (error) {
       console.error('Error deleting class:', error);
+      setNotification({ type: 'error', message: 'Error deleting class' });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setProcessingId(null);
     }
   }
 
   async function toggleAttended(id: number, attended: boolean, classDay: string) {
+    setProcessingId(id);
     try {
       const response = await fetch(`/api/classes/${id}`, {
         method: 'PUT',
@@ -273,9 +292,16 @@ export default function WeeklyClasses() {
           }),
         });
         await loadClasses();
+      } else {
+        setNotification({ type: 'error', message: 'Failed to update attendance' });
+        setTimeout(() => setNotification(null), 3000);
       }
     } catch (error) {
       console.error('Error toggling attendance:', error);
+      setNotification({ type: 'error', message: 'Error updating attendance' });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setProcessingId(null);
     }
   }
 
@@ -430,10 +456,12 @@ export default function WeeklyClasses() {
 
   async function saveEdit(id: number) {
     setError(null);
+    setSubmitting(true);
     const formClass = formClasses[0];
 
     if (!formClass.classname.trim() || !formClass.day.trim() || !formClass.timeFrom.trim() || !formClass.timeTo.trim()) {
       setError('Please fill in all required fields');
+      setSubmitting(false);
       return;
     }
 
@@ -455,17 +483,24 @@ export default function WeeklyClasses() {
       if (response.status === 409) {
         const data = await response.json();
         setError(data.error);
+        setSubmitting(false);
         return;
       }
 
       if (response.ok) {
+        setNotification({ type: 'success', message: 'Class updated successfully' });
         resetForm();
         setShowForm(false);
         await loadClasses();
+        setTimeout(() => setNotification(null), 2000);
+      } else {
+        setError('Failed to update class');
       }
     } catch (err) {
       console.error('Error updating class:', err);
       setError('Failed to update class');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -483,7 +518,8 @@ export default function WeeklyClasses() {
               setShowForm(!showForm);
               setShowRawImport(false);
             }}
-            className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium"
+            disabled={submitting}
+            className="bg-purple-500 hover:bg-purple-600 disabled:bg-purple-400 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium disabled:cursor-not-allowed"
           >
             + Add Classes
           </button>
@@ -493,7 +529,8 @@ export default function WeeklyClasses() {
               setShowRawImport(!showRawImport);
               setShowForm(false);
             }}
-            className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium"
+            disabled={submitting}
+            className="bg-indigo-500 hover:bg-indigo-600 disabled:bg-indigo-400 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium disabled:cursor-not-allowed"
           >
             📋 Import Raw Data
           </button>
@@ -622,8 +659,10 @@ export default function WeeklyClasses() {
           <div className="flex gap-2">
             <button
               onClick={() => (editingId ? saveEdit(editingId) : addAllClasses())}
-              className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition-colors font-medium"
+              disabled={submitting}
+              className="bg-purple-500 hover:bg-purple-600 disabled:bg-purple-400 text-white px-4 py-2 rounded transition-colors font-medium flex items-center gap-2 disabled:cursor-not-allowed"
             >
+              {submitting && <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>}
               {editingId ? 'Save' : 'Save All'}
             </button>
             <button
@@ -631,11 +670,22 @@ export default function WeeklyClasses() {
                 resetForm();
                 setShowForm(false);
               }}
-              className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition-colors"
+              disabled={submitting}
+              className="bg-gray-400 hover:bg-gray-500 disabled:bg-gray-300 text-white px-4 py-2 rounded transition-colors disabled:cursor-not-allowed"
             >
               Cancel
             </button>
           </div>
+        </div>
+      )}
+
+      {notification && (
+        <div className={`mb-4 p-3 rounded-lg animate-in fade-in slide-in-from-top-2 transition-all ${
+          notification.type === 'success'
+            ? 'bg-green-100 border border-green-400 text-green-700'
+            : 'bg-red-100 border border-red-400 text-red-700'
+        }`}>
+          {notification.type === 'success' ? '✓' : '✕'} {notification.message}
         </div>
       )}
 
@@ -686,25 +736,34 @@ export default function WeeklyClasses() {
                           <div className="col-span-4 flex items-center justify-center gap-2">
                             <button
                               onClick={() => toggleAttended(classItem.id, classItem.attended, day)}
-                              className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                                classItem.attended
+                              disabled={processingId === classItem.id}
+                              className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+                                processingId === classItem.id
+                                  ? 'bg-gray-300 cursor-not-allowed opacity-50'
+                                  : classItem.attended
                                   ? 'bg-green-500 hover:bg-green-600 text-white'
                                   : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
                               }`}
                             >
-                              {classItem.attended ? '✓ Attended' : 'Mark Attended'}
+                              {processingId === classItem.id ? <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span> : classItem.attended ? '✓ Attended' : 'Mark Attended'}
                             </button>
                             <button
                               onClick={() => startEdit(classItem)}
-                              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold transition-colors"
+                              disabled={processingId === classItem.id}
+                              className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400 text-white px-3 py-1 rounded text-xs font-semibold transition-colors disabled:cursor-not-allowed"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => deleteClass(classItem.id)}
-                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold transition-colors"
+                              disabled={processingId === classItem.id}
+                              className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+                                processingId === classItem.id
+                                  ? 'bg-red-400 cursor-not-allowed opacity-50'
+                                  : 'bg-red-600 hover:bg-red-700 text-white'
+                              }`}
                             >
-                              Delete
+                              {processingId === classItem.id ? <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span> : 'Delete'}
                             </button>
                           </div>
                         </div>

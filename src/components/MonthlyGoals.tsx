@@ -17,6 +17,9 @@ export default function MonthlyGoals() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     loadGoals();
@@ -36,10 +39,12 @@ export default function MonthlyGoals() {
 
   async function addGoal() {
     if (!title.trim()) {
-      alert('Please enter a goal');
+      setNotification({ type: 'error', message: 'Please enter a goal' });
+      setTimeout(() => setNotification(null), 3000);
       return;
     }
 
+    setSubmitting(true);
     try {
       const response = await fetch('/api/goals', {
         method: 'POST',
@@ -48,16 +53,26 @@ export default function MonthlyGoals() {
       });
 
       if (response.ok) {
+        setNotification({ type: 'success', message: 'Goal added successfully' });
         resetForm();
         setShowForm(false);
         await loadGoals();
+        setTimeout(() => setNotification(null), 2000);
+      } else {
+        setNotification({ type: 'error', message: 'Failed to add goal' });
+        setTimeout(() => setNotification(null), 3000);
       }
     } catch (error) {
       console.error('Error adding goal:', error);
+      setNotification({ type: 'error', message: 'Error adding goal' });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setSubmitting(false);
     }
   }
 
   async function saveEdit(id: number) {
+    setSubmitting(true);
     try {
       const response = await fetch(`/api/goals/${id}`, {
         method: 'PUT',
@@ -66,12 +81,21 @@ export default function MonthlyGoals() {
       });
 
       if (response.ok) {
+        setNotification({ type: 'success', message: 'Goal updated successfully' });
         resetForm();
         setShowForm(false);
         await loadGoals();
+        setTimeout(() => setNotification(null), 2000);
+      } else {
+        setNotification({ type: 'error', message: 'Failed to update goal' });
+        setTimeout(() => setNotification(null), 3000);
       }
     } catch (error) {
       console.error('Error updating goal:', error);
+      setNotification({ type: 'error', message: 'Error updating goal' });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -89,6 +113,7 @@ export default function MonthlyGoals() {
   }
 
   async function toggleGoal(id: number, completed: boolean) {
+    setProcessingId(id);
     try {
       const response = await fetch(`/api/goals/${id}`, {
         method: 'PUT',
@@ -98,23 +123,40 @@ export default function MonthlyGoals() {
 
       if (response.ok) {
         await loadGoals();
+      } else {
+        setNotification({ type: 'error', message: 'Failed to update goal' });
+        setTimeout(() => setNotification(null), 3000);
       }
     } catch (error) {
       console.error('Error toggling goal:', error);
+      setNotification({ type: 'error', message: 'Error updating goal' });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setProcessingId(null);
     }
   }
 
   async function deleteGoal(id: number) {
     if (!confirm('Are you sure you want to delete this goal?')) return;
 
+    setProcessingId(id);
     try {
       const response = await fetch(`/api/goals/${id}`, { method: 'DELETE' });
 
       if (response.ok) {
+        setNotification({ type: 'success', message: 'Goal deleted successfully' });
         await loadGoals();
+        setTimeout(() => setNotification(null), 2000);
+      } else {
+        setNotification({ type: 'error', message: 'Failed to delete goal' });
+        setTimeout(() => setNotification(null), 3000);
       }
     } catch (error) {
       console.error('Error deleting goal:', error);
+      setNotification({ type: 'error', message: 'Error deleting goal' });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setProcessingId(null);
     }
   }
 
@@ -129,7 +171,8 @@ export default function MonthlyGoals() {
             resetForm();
             setShowForm(!showForm);
           }}
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+          disabled={submitting}
+          className="bg-green-500 hover:bg-green-600 disabled:bg-green-400 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium disabled:cursor-not-allowed"
         >
           + Add Goal
         </button>
@@ -157,8 +200,10 @@ export default function MonthlyGoals() {
           <div className="flex gap-2">
             <button
               onClick={() => (editingId ? saveEdit(editingId) : addGoal())}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors"
+              disabled={submitting}
+              className="bg-green-500 hover:bg-green-600 disabled:bg-green-400 text-white px-4 py-2 rounded transition-colors flex items-center gap-2 disabled:cursor-not-allowed"
             >
+              {submitting && <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>}
               {editingId ? 'Save' : 'Add'}
             </button>
             <button
@@ -166,11 +211,22 @@ export default function MonthlyGoals() {
                 resetForm();
                 setShowForm(false);
               }}
-              className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition-colors"
+              disabled={submitting}
+              className="bg-gray-400 hover:bg-gray-500 disabled:bg-gray-300 text-white px-4 py-2 rounded transition-colors disabled:cursor-not-allowed"
             >
               Cancel
             </button>
           </div>
+        </div>
+      )}
+
+      {notification && (
+        <div className={`mb-4 p-3 rounded-lg animate-in fade-in slide-in-from-top-2 transition-all ${
+          notification.type === 'success'
+            ? 'bg-green-100 border border-green-400 text-green-700'
+            : 'bg-red-100 border border-red-400 text-red-700'
+        }`}>
+          {notification.type === 'success' ? '✓' : '✕'} {notification.message}
         </div>
       )}
 
@@ -193,7 +249,8 @@ export default function MonthlyGoals() {
                 type="checkbox"
                 checked={goal.completed}
                 onChange={() => toggleGoal(goal.id, goal.completed)}
-                className="mt-1 w-5 h-5 cursor-pointer"
+                disabled={processingId === goal.id}
+                className="mt-1 w-5 h-5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               />
               <div className="flex-1">
                 <div
@@ -219,15 +276,21 @@ export default function MonthlyGoals() {
               <div className="flex gap-2">
                 <button
                   onClick={() => startEdit(goal)}
-                  className="text-blue-900 hover:text-blue-950 font-bold transition-colors text-sm underline"
+                  disabled={processingId === goal.id}
+                  className="text-blue-900 hover:text-blue-950 font-bold transition-colors text-sm underline disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => deleteGoal(goal.id)}
-                  className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
+                  disabled={processingId === goal.id}
+                  className={`text-sm font-medium transition-all ${
+                    processingId === goal.id
+                      ? 'text-red-400 cursor-not-allowed opacity-50'
+                      : 'text-red-600 hover:text-red-800'
+                  }`}
                 >
-                  Delete
+                  {processingId === goal.id ? <span className="inline-block w-3 h-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></span> : 'Delete'}
                 </button>
               </div>
             </div>

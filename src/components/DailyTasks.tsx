@@ -18,6 +18,9 @@ export default function DailyTasks() {
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(true);
   const [todayDate, setTodayDate] = useState('');
+  const [processingId, setProcessingId] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     // Set today's date
@@ -56,10 +59,12 @@ export default function DailyTasks() {
 
   async function addTask() {
     if (!title.trim()) {
-      alert('Please enter a task');
+      setNotification({ type: 'error', message: 'Please enter a task' });
+      setTimeout(() => setNotification(null), 3000);
       return;
     }
 
+    setSubmitting(true);
     try {
       const response = await fetch('/api/tasks', {
         method: 'POST',
@@ -68,16 +73,26 @@ export default function DailyTasks() {
       });
 
       if (response.ok) {
+        setNotification({ type: 'success', message: 'Task added successfully' });
         resetForm();
         setShowForm(false);
         await loadTasks();
+        setTimeout(() => setNotification(null), 2000);
+      } else {
+        setNotification({ type: 'error', message: 'Failed to add task' });
+        setTimeout(() => setNotification(null), 3000);
       }
     } catch (error) {
       console.error('Error adding task:', error);
+      setNotification({ type: 'error', message: 'Error adding task' });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setSubmitting(false);
     }
   }
 
   async function saveEdit(id: number) {
+    setSubmitting(true);
     try {
       const response = await fetch(`/api/tasks/${id}`, {
         method: 'PUT',
@@ -86,12 +101,21 @@ export default function DailyTasks() {
       });
 
       if (response.ok) {
+        setNotification({ type: 'success', message: 'Task updated successfully' });
         resetForm();
         setShowForm(false);
         await loadTasks();
+        setTimeout(() => setNotification(null), 2000);
+      } else {
+        setNotification({ type: 'error', message: 'Failed to update task' });
+        setTimeout(() => setNotification(null), 3000);
       }
     } catch (error) {
       console.error('Error updating task:', error);
+      setNotification({ type: 'error', message: 'Error updating task' });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -109,6 +133,7 @@ export default function DailyTasks() {
   }
 
   async function toggleTask(id: number, completed: boolean) {
+    setProcessingId(id);
     try {
       const response = await fetch(`/api/tasks/${id}`, {
         method: 'PUT',
@@ -118,23 +143,40 @@ export default function DailyTasks() {
 
       if (response.ok) {
         await loadTasks();
+      } else {
+        setNotification({ type: 'error', message: 'Failed to update task' });
+        setTimeout(() => setNotification(null), 3000);
       }
     } catch (error) {
       console.error('Error toggling task:', error);
+      setNotification({ type: 'error', message: 'Error updating task' });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setProcessingId(null);
     }
   }
 
   async function deleteTask(id: number) {
     if (!confirm('Are you sure you want to delete this task?')) return;
 
+    setProcessingId(id);
     try {
       const response = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
 
       if (response.ok) {
+        setNotification({ type: 'success', message: 'Task deleted successfully' });
         await loadTasks();
+        setTimeout(() => setNotification(null), 2000);
+      } else {
+        setNotification({ type: 'error', message: 'Failed to delete task' });
+        setTimeout(() => setNotification(null), 3000);
       }
     } catch (error) {
       console.error('Error deleting task:', error);
+      setNotification({ type: 'error', message: 'Error deleting task' });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setProcessingId(null);
     }
   }
 
@@ -152,7 +194,8 @@ export default function DailyTasks() {
             resetForm();
             setShowForm(!showForm);
           }}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium"
+          disabled={submitting}
+          className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium disabled:cursor-not-allowed"
         >
           + Add Task
         </button>
@@ -180,8 +223,10 @@ export default function DailyTasks() {
           <div className="flex gap-2">
             <button
               onClick={() => (editingId ? saveEdit(editingId) : addTask())}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
+              disabled={submitting}
+              className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400 text-white px-4 py-2 rounded transition-colors flex items-center gap-2 disabled:cursor-not-allowed"
             >
+              {submitting && <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>}
               {editingId ? 'Save' : 'Add'}
             </button>
             <button
@@ -189,11 +234,22 @@ export default function DailyTasks() {
                 resetForm();
                 setShowForm(false);
               }}
-              className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition-colors"
+              disabled={submitting}
+              className="bg-gray-400 hover:bg-gray-500 disabled:bg-gray-300 text-white px-4 py-2 rounded transition-colors disabled:cursor-not-allowed"
             >
               Cancel
             </button>
           </div>
+        </div>
+      )}
+
+      {notification && (
+        <div className={`mb-4 p-3 rounded-lg animate-in fade-in slide-in-from-top-2 transition-all ${
+          notification.type === 'success'
+            ? 'bg-green-100 border border-green-400 text-green-700'
+            : 'bg-red-100 border border-red-400 text-red-700'
+        }`}>
+          {notification.type === 'success' ? '✓' : '✕'} {notification.message}
         </div>
       )}
 
@@ -216,7 +272,8 @@ export default function DailyTasks() {
                 type="checkbox"
                 checked={task.completed}
                 onChange={() => toggleTask(task.id, task.completed)}
-                className="mt-1 w-5 h-5 cursor-pointer"
+                disabled={processingId === task.id}
+                className="mt-1 w-5 h-5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               />
               <div className="flex-1">
                 <div
@@ -242,15 +299,21 @@ export default function DailyTasks() {
               <div className="flex gap-2">
                 <button
                   onClick={() => startEdit(task)}
-                  className="text-blue-900 hover:text-blue-950 font-bold transition-colors text-sm underline"
+                  disabled={processingId === task.id}
+                  className="text-blue-900 hover:text-blue-950 font-bold transition-colors text-sm underline disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => deleteTask(task.id)}
-                  className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
+                  disabled={processingId === task.id}
+                  className={`text-sm font-medium transition-all ${
+                    processingId === task.id
+                      ? 'text-red-400 cursor-not-allowed opacity-50'
+                      : 'text-red-600 hover:text-red-800'
+                  }`}
                 >
-                  Delete
+                  {processingId === task.id ? <span className="inline-block w-3 h-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></span> : 'Delete'}
                 </button>
               </div>
             </div>
