@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loadData, saveData } from '@/lib/data';
+import { updateTask, deleteTask } from '@/lib/supabase';
 
 export async function PUT(
   request: NextRequest,
@@ -8,21 +8,21 @@ export async function PUT(
   try {
     const { id } = await params;
     const { completed, title, description } = await request.json();
-    const data = await loadData();
+    
+    const updates: any = {};
+    if (completed !== undefined) updates.completed = completed;
+    if (title !== undefined) updates.title = title;
+    if (description !== undefined) updates.description = description;
 
-    const task = data.daily_tasks.find((t: any) => t.id === parseInt(id));
-    if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    const success = await updateTask(parseInt(id), updates);
+    
+    if (!success) {
+      return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
     }
 
-    if (completed !== undefined) task.completed = completed;
-    if (title !== undefined) task.title = title;
-    if (description !== undefined) task.description = description;
-
-    await saveData(data);
-
-    return NextResponse.json(task);
+    return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Error updating task:', error);
     return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
   }
 }
@@ -33,13 +33,16 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const data = await loadData();
-
-    data.daily_tasks = data.daily_tasks.filter((t: any) => t.id !== parseInt(id));
-    await saveData(data);
+    
+    const success = await deleteTask(parseInt(id));
+    
+    if (!success) {
+      return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Error deleting task:', error);
     return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
   }
 }

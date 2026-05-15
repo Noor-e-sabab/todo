@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loadData, saveData } from '@/lib/data';
+import { getClasses, addClass } from '@/lib/supabase';
 
 function parseTime(timeStr: string): number {
   // Parse time format like "14:30" or "2:30PM"
@@ -37,7 +37,7 @@ function checkConflicts(classes: any[], newClass: any, excludeId?: number): any 
     if (existingClass.day === newClass.day && hasTimeConflict(newClass.time, existingClass.time)) {
       return {
         conflicts: true,
-        message: `Time conflict with "${existingClass.className}" at ${existingClass.time}`,
+        message: `Time conflict with "${existingClass.classname}" at ${existingClass.time}`,
       };
     }
   }
@@ -46,16 +46,16 @@ function checkConflicts(classes: any[], newClass: any, excludeId?: number): any 
 
 export async function GET() {
   try {
-    const data = await loadData();
-    return NextResponse.json(data.weekly_classes || []);
+    const classes = await getClasses();
+    return NextResponse.json(classes);
   } catch (error) {
+    console.error('Error loading classes:', error);
     return NextResponse.json({ error: 'Failed to load classes' }, { status: 500 });
   }
 }
 
 interface WeeklyClass {
-  id: number;
-  className: string;
+  classname: string;
   day: string;
   time: string;
   instructor: string;
@@ -65,12 +65,12 @@ interface WeeklyClass {
 
 export async function POST(request: NextRequest) {
   try {
-    const { className, day, time, instructor, location } = await request.json();
-    const data = await loadData();
-
+    const { classname, day, time, instructor, location } = await request.json();
+    
+    const classes = await getClasses();
+    
     const newClass: WeeklyClass = {
-      id: Date.now(),
-      className,
+      classname,
       day,
       time,
       instructor,
@@ -79,16 +79,20 @@ export async function POST(request: NextRequest) {
     };
 
     // Check for conflicts
-    const conflict = checkConflicts(data.weekly_classes, newClass);
+    const conflict = checkConflicts(classes, newClass);
     if (conflict.conflicts) {
       return NextResponse.json({ error: conflict.message }, { status: 409 });
     }
     
-    data.weekly_classes.push(newClass);
-    await saveData(data);
+    const created = await addClass(newClass);
+    
+    if (!created) {
+      return NextResponse.json({ error: 'Failed to create class' }, { status: 500 });
+    }
 
-    return NextResponse.json(newClass, { status: 201 });
+    return NextResponse.json(created, { status: 201 });
   } catch (error) {
+    console.error('Error creating class:', error);
     return NextResponse.json({ error: 'Failed to create class' }, { status: 500 });
   }
 }

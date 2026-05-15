@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loadData, saveData } from '@/lib/data';
+import { getGoals, addGoal } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    const data = await loadData();
-    return NextResponse.json(data.monthly_goals || []);
+    const goals = await getGoals();
+    return NextResponse.json(goals);
   } catch (error) {
+    console.error('Error loading goals:', error);
     return NextResponse.json({ error: 'Failed to load goals' }, { status: 500 });
   }
 }
@@ -13,21 +14,16 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const { title, description } = await request.json();
-    const data = await loadData();
 
-    const newGoal = {
-      id: Date.now(),
-      title,
-      description,
-      completed: false,
-      created_date: new Date().toISOString().split('T')[0],
-    };
-
-    data.monthly_goals.push(newGoal);
-    await saveData(data);
+    const newGoal = await addGoal(title, description);
+    
+    if (!newGoal) {
+      return NextResponse.json({ error: 'Failed to create goal' }, { status: 500 });
+    }
 
     return NextResponse.json(newGoal, { status: 201 });
   } catch (error) {
+    console.error('Error creating goal:', error);
     return NextResponse.json({ error: 'Failed to create goal' }, { status: 500 });
   }
 }

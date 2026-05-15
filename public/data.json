@@ -117,6 +117,15 @@
     }
   ],
   "monthly_goals": [],
-  "daily_attendance": {},
-  "last_reset": "2026-05-14"
+  "daily_attendance": {
+    "2026-05-15": {
+      "1778748379652": false,
+      "1778748379593": false
+    },
+    "2026-05-17": {
+      "1778748379593": false
+    }
+  },
+  "last_reset": "2026-05-14",
+  "last_task_reset": "2026-05-15"
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loadData, saveData } from '@/lib/data';
+import { updateGoal, deleteGoal } from '@/lib/supabase';
 
 export async function PUT(
   request: NextRequest,
@@ -8,21 +8,21 @@ export async function PUT(
   try {
     const { id } = await params;
     const { completed, title, description } = await request.json();
-    const data = await loadData();
+    
+    const updates: any = {};
+    if (completed !== undefined) updates.completed = completed;
+    if (title !== undefined) updates.title = title;
+    if (description !== undefined) updates.description = description;
 
-    const goal = data.monthly_goals.find((g: any) => g.id === parseInt(id));
-    if (!goal) {
-      return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
+    const success = await updateGoal(parseInt(id), updates);
+    
+    if (!success) {
+      return NextResponse.json({ error: 'Failed to update goal' }, { status: 500 });
     }
 
-    if (completed !== undefined) goal.completed = completed;
-    if (title !== undefined) goal.title = title;
-    if (description !== undefined) goal.description = description;
-
-    await saveData(data);
-
-    return NextResponse.json(goal);
+    return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Error updating goal:', error);
     return NextResponse.json({ error: 'Failed to update goal' }, { status: 500 });
   }
 }
@@ -33,13 +33,16 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const data = await loadData();
-
-    data.monthly_goals = data.monthly_goals.filter((g: any) => g.id !== parseInt(id));
-    await saveData(data);
+    
+    const success = await deleteGoal(parseInt(id));
+    
+    if (!success) {
+      return NextResponse.json({ error: 'Failed to delete goal' }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Error deleting goal:', error);
     return NextResponse.json({ error: 'Failed to delete goal' }, { status: 500 });
   }
 }

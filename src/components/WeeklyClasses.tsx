@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import MonthlyAttendanceCalendar from './MonthlyAttendanceCalendar';
 
 interface Class {
   id: number;
-  className: string;
+  classname: string;
   day: string;
   time: string;
   instructor: string;
@@ -13,7 +14,7 @@ interface Class {
 }
 
 interface FormClass {
-  className: string;
+  classname: string;
   day: string;
   timeFrom: string;
   timeTo: string;
@@ -27,7 +28,7 @@ export default function WeeklyClasses() {
   const [showRawImport, setShowRawImport] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formClasses, setFormClasses] = useState<FormClass[]>([
-    { className: '', day: '', timeFrom: '', timeTo: '', instructor: '', location: '' },
+    { classname: '', day: '', timeFrom: '', timeTo: '', instructor: '', location: '' },
   ]);
   const [rawData, setRawData] = useState('');
   const [loading, setLoading] = useState(true);
@@ -50,13 +51,13 @@ export default function WeeklyClasses() {
   }
 
   function resetForm() {
-    setFormClasses([{ className: '', day: '', timeFrom: '', timeTo: '', instructor: '', location: '' }]);
+    setFormClasses([{ classname: '', day: '', timeFrom: '', timeTo: '', instructor: '', location: '' }]);
     setEditingId(null);
     setError(null);
   }
 
   function addFormRow() {
-    setFormClasses([...formClasses, { className: '', day: '', timeFrom: '', timeTo: '', instructor: '', location: '' }]);
+    setFormClasses([...formClasses, { classname: '', day: '', timeFrom: '', timeTo: '', instructor: '', location: '' }]);
   }
 
   function removeFormRow(index: number) {
@@ -159,7 +160,7 @@ export default function WeeklyClasses() {
         // Create entry for each day
         days.forEach(day => {
           parsed.push({
-            className: courseName,
+            classname: courseName,
             day: day,
             timeFrom: timeFrom,
             timeTo: timeTo,
@@ -184,7 +185,7 @@ export default function WeeklyClasses() {
   }
 
   async function addAllClasses() {
-    const validClasses = formClasses.filter(f => f.className.trim() && f.day.trim() && f.timeFrom.trim() && f.timeTo.trim());
+    const validClasses = formClasses.filter(f => f.classname.trim() && f.day.trim() && f.timeFrom.trim() && f.timeTo.trim());
     
     if (validClasses.length === 0) {
       setError('Please fill in all required fields for at least one class');
@@ -197,7 +198,7 @@ export default function WeeklyClasses() {
     for (const formClass of validClasses) {
       try {
         const classData = {
-          className: formClass.className,
+          classname: formClass.classname,
           day: formClass.day,
           time: `${formClass.timeFrom}-${formClass.timeTo}`,
           instructor: formClass.instructor || '',
@@ -212,7 +213,7 @@ export default function WeeklyClasses() {
 
         if (response.status === 409) {
           const data = await response.json();
-          results.conflicts.push(`${formClass.className}: ${data.error}`);
+          results.conflicts.push(`${formClass.classname}: ${data.error}`);
           results.failed++;
         } else if (response.ok) {
           results.success++;
@@ -251,7 +252,7 @@ export default function WeeklyClasses() {
     }
   }
 
-  async function toggleAttended(id: number, attended: boolean) {
+  async function toggleAttended(id: number, attended: boolean, classDay: string) {
     try {
       const response = await fetch(`/api/classes/${id}`, {
         method: 'PUT',
@@ -260,6 +261,17 @@ export default function WeeklyClasses() {
       });
 
       if (response.ok) {
+        // Save to monthly attendance calendar with correct date
+        const classDate = getNextDateForDay(classDay);
+        await fetch('/api/attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: classDate,
+            classId: id.toString(),
+            attended: !attended,
+          }),
+        });
         await loadClasses();
       }
     } catch (error) {
@@ -343,6 +355,40 @@ export default function WeeklyClasses() {
     return `${formatSingleTime(parts[0])} - ${formatSingleTime(parts[1])}`;
   }
 
+  function getDayOfWeekNumber(dayName: string): number {
+    const dayMap: { [key: string]: number } = {
+      'Sunday': 0,
+      'Monday': 1,
+      'Tuesday': 2,
+      'Wednesday': 3,
+      'Thursday': 4,
+      'Friday': 5,
+      'Saturday': 6
+    };
+    return dayMap[dayName] ?? -1;
+  }
+
+  function getNextDateForDay(dayName: string): string {
+    const today = new Date();
+    const targetDayNum = getDayOfWeekNumber(dayName);
+    const currentDayNum = today.getDay();
+    
+    let daysToAdd = targetDayNum - currentDayNum;
+    if (daysToAdd <= 0) {
+      daysToAdd += 7;
+    }
+    
+    const nextDate = new Date(today);
+    nextDate.setDate(nextDate.getDate() + daysToAdd);
+    
+    return nextDate.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+  }
+
+  function formatDateDisplay(dateStr: string): string {
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
   function getClassesByDay() {
     const dayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const grouped: { [key: string]: Class[] } = {};
@@ -371,7 +417,7 @@ export default function WeeklyClasses() {
   function startEdit(classItem: Class) {
     const [timeFrom, timeTo] = classItem.time.split('-');
     setFormClasses([{
-      className: classItem.className,
+      classname: classItem.classname,
       day: classItem.day,
       timeFrom: timeFrom.trim(),
       timeTo: timeTo.trim(),
@@ -386,14 +432,14 @@ export default function WeeklyClasses() {
     setError(null);
     const formClass = formClasses[0];
 
-    if (!formClass.className.trim() || !formClass.day.trim() || !formClass.timeFrom.trim() || !formClass.timeTo.trim()) {
+    if (!formClass.classname.trim() || !formClass.day.trim() || !formClass.timeFrom.trim() || !formClass.timeTo.trim()) {
       setError('Please fill in all required fields');
       return;
     }
 
     try {
       const classData = {
-        className: formClass.className,
+        classname: formClass.classname,
         day: formClass.day,
         time: `${formClass.timeFrom}-${formClass.timeTo}`,
         instructor: formClass.instructor || '',
@@ -427,16 +473,17 @@ export default function WeeklyClasses() {
 
   return (
     <section className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow col-span-full">
-      <div className="flex justify-between items-center mb-4 pb-4 border-b">
+      <div className="flex justify-between items-center mb-4 pb-4 border-b flex-wrap gap-4">
         <h2 className="text-2xl font-semibold text-gray-800">📚 Weekly Class Schedule</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <MonthlyAttendanceCalendar />
           <button
             onClick={() => {
               resetForm();
               setShowForm(!showForm);
               setShowRawImport(false);
             }}
-            className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+            className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium"
           >
             + Add Classes
           </button>
@@ -446,7 +493,7 @@ export default function WeeklyClasses() {
               setShowRawImport(!showRawImport);
               setShowForm(false);
             }}
-            className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+            className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium"
           >
             📋 Import Raw Data
           </button>
@@ -506,8 +553,8 @@ export default function WeeklyClasses() {
                   <input
                     type="text"
                     placeholder="Class Name"
-                    value={formClass.className ?? ''}
-                    onChange={(e) => updateFormClass(index, 'className', e.target.value)}
+                    value={formClass.classname ?? ''}
+                    onChange={(e) => updateFormClass(index, 'classname', e.target.value)}
                     className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder-gray-500"
                   />
                   <select
@@ -604,9 +651,10 @@ export default function WeeklyClasses() {
                 {/* Table Header */}
                 <div className="grid grid-cols-12 gap-2 mb-2 px-3 py-3 bg-gray-100 rounded-t font-bold text-sm text-gray-700 border-b border-gray-300">
                   <div className="col-span-2">Course</div>
+                  <div className="col-span-1">Date</div>
                   <div className="col-span-2">Time</div>
                   <div className="col-span-2">Location</div>
-                  <div className="col-span-2">Instructor</div>
+                  <div className="col-span-1">Instructor</div>
                   <div className="col-span-4 text-center">Actions</div>
                 </div>
 
@@ -630,13 +678,14 @@ export default function WeeklyClasses() {
                               : 'bg-white hover:bg-gray-50 border-gray-200'
                           }`}
                         >
-                          <div className="col-span-2 font-bold text-purple-600 text-sm">{classItem.className}</div>
+                          <div className="col-span-2 font-bold text-purple-600 text-sm">{classItem.classname}</div>
+                          <div className="col-span-1 text-xs text-gray-600 font-medium">{formatDateDisplay(getNextDateForDay(day))}</div>
                           <div className="col-span-2 text-sm text-gray-700">{formatTime24To12(classItem.time)}</div>
                           <div className="col-span-2 text-sm text-gray-700">{classItem.location || '-'}</div>
-                          <div className="col-span-2 text-sm text-gray-700">{classItem.instructor || '-'}</div>
+                          <div className="col-span-1 text-xs text-gray-700">{classItem.instructor || '-'}</div>
                           <div className="col-span-4 flex items-center justify-center gap-2">
                             <button
-                              onClick={() => toggleAttended(classItem.id, classItem.attended)}
+                              onClick={() => toggleAttended(classItem.id, classItem.attended, day)}
                               className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
                                 classItem.attended
                                   ? 'bg-green-500 hover:bg-green-600 text-white'
@@ -661,8 +710,8 @@ export default function WeeklyClasses() {
                         </div>
                         {hasGap && (
                           <div className="grid grid-cols-12 px-3 py-2 bg-orange-50 border-b border-orange-200 text-xs text-gray-600 font-medium">
-                            <div className="col-span-2"></div>
-                            <div className="col-span-10">
+                            <div className="col-span-3"></div>
+                            <div className="col-span-9">
                               ⏱ Break: {gapMinutes >= 60 ? `${Math.floor(gapMinutes / 60)}h ${gapMinutes % 60}m` : `${gapMinutes}m`}
                             </div>
                           </div>

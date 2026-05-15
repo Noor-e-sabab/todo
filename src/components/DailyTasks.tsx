@@ -17,9 +17,29 @@ export default function DailyTasks() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(true);
+  const [todayDate, setTodayDate] = useState('');
 
   useEffect(() => {
+    // Set today's date
+    const today = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    setTodayDate(today);
+
     loadTasks();
+
+    // Check for midnight reset every minute
+    const resetCheckInterval = setInterval(() => {
+      const now = new Date();
+      if (now.getHours() === 0 && now.getMinutes() === 0) {
+        // It's midnight, refresh tasks
+        loadTasks();
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(resetCheckInterval);
   }, []);
 
   async function loadTasks() {
@@ -123,13 +143,16 @@ export default function DailyTasks() {
   return (
     <section className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
       <div className="flex justify-between items-center mb-4 pb-4 border-b">
-        <h2 className="text-2xl font-semibold text-gray-800">📅 Daily Tasks</h2>
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-800">📅 Daily Tasks</h2>
+          <p className="text-sm text-gray-500 mt-1">Today: {todayDate}</p>
+        </div>
         <button
           onClick={() => {
             resetForm();
             setShowForm(!showForm);
           }}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium"
         >
           + Add Task
         </button>
@@ -213,7 +236,7 @@ export default function DailyTasks() {
                   </div>
                 )}
                 <div className="text-xs text-gray-400 mt-1">
-                  Created: {task.created_date}
+                  📆 {task.created_date}
                 </div>
               </div>
               <div className="flex gap-2">
